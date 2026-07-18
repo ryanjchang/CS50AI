@@ -27,7 +27,7 @@ def main():
         sys.exit(f"Input must include mask token {tokenizer.mask_token}.")
 
     # Use model to process input
-    model = TFBertForMaskedLM.from_pretrained(MODEL)
+    model = TFBertForMaskedLM.from_pretrained(MODEL, use_safetensors=False)
     result = model(**inputs, output_attentions=True)
 
     # Generate predictions
@@ -45,20 +45,25 @@ def get_mask_token_index(mask_token_id, inputs):
     Return the index of the token with the specified `mask_token_id`, or
     `None` if not present in the `inputs`.
     """
-    # TODO: Implement this function
-    raise NotImplementedError
+    # seems like inputs is like a dict
+    # input ids gives me a list of list of ids
+    input_ids = inputs["input_ids"][0]
+    print(input_ids)
+    for i, (id) in enumerate(input_ids):
+        print(f"value: {id}")
+        if mask_token_id == id:
+            print(f"Found id: {id}")
+            return i
 
-
+    return None
 
 def get_color_for_attention_score(attention_score):
     """
     Return a tuple of three integers representing a shade of gray for the
     given `attention_score`. Each value should be in the range [0, 255].
     """
-    # TODO: Implement this function
-    raise NotImplementedError
-
-
+    scaled = int(attention_score * 255)
+    return (scaled, scaled, scaled)
 
 def visualize_attentions(tokens, attentions):
     """
@@ -70,13 +75,21 @@ def visualize_attentions(tokens, attentions):
     include both the layer number (starting count from 1) and head number
     (starting count from 1).
     """
-    # TODO: Update this function to produce diagrams for all layers and heads.
-    generate_diagram(
-        1,
-        1,
-        tokens,
-        attentions[0][0][0]
-    )
+    # tokens is a list of tokens
+    # attentions are tuples with 1 element per layer
+    # each element is a tensor(batch, heads, seq_len, seq_len)
+    for i, layer in enumerate(attentions):
+        # go through each layer's tensor
+        for j in range(layer.shape[1]):
+            # go through each group of attention heads
+            layer = i + 1
+            head = j + 1
+            generate_diagram(
+                layer,
+                head,
+                tokens,
+                attentions[i][0][j] # layer, batch, head
+            )
 
 
 def generate_diagram(layer_number, head_number, tokens, attention_weights):
